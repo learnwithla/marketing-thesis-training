@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marketing English Practice Time</title>
+  <meta name="description" content="Practice marketing vocabulary through fill-in-the-blank sentences." />
+  <meta property="og:title" content="Marketing English Practice Time" />
+  <meta property="og:description" content="Practice marketing vocabulary through fill-in-the-blank sentences." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://learnwithla.github.io/marketing-thesis-training/practice.html" />
+  <meta property="og:image" content="https://learnwithla.github.io/marketing-thesis-training/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Marketing English Practice Time" />
+  <meta name="twitter:description" content="Practice marketing vocabulary through fill-in-the-blank sentences." />
+  <meta name="twitter:image" content="https://learnwithla.github.io/marketing-thesis-training/og-image.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="Go to homepage">
+        <div class="logo">La</div>
+        <div>
+          <h1>Practice Time</h1>
+          <p>Guess the missing marketing term.</p>
+        </div>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="index.html">Home</a>
+        <a href="vocab.html">Flip Cards</a>
+        <a href="casestudy.html">Case Study</a>
+      </nav>
+    </header>
+
+    <main>
+      <h2 class="page-title">Fill in the Blank</h2>
+      <p class="page-subtitle">Read the sentence first. Guess the missing term, then click the blank, the Reveal Answer button, or press Space to check.</p>
+
+      <div class="toolbar">
+        <div class="filters">
+          <select id="practiceWeek" aria-label="Filter by week"></select>
+          <input id="practiceSearch" type="search" placeholder="Search practice sentences..." aria-label="Search practice sentences" />
+        </div>
+        <span class="pill" id="practiceCount"></span>
+      </div>
+
+      <div class="study-wrap">
+        <div class="progress"><div class="bar" id="practiceBar"></div></div>
+        <div class="card-panel practice-card" id="practicePanel"></div>
+        <div class="controls">
+          <button class="btn secondary" id="practicePrev">Previous</button>
+          <button class="btn" id="practiceReveal">Reveal Answer</button>
+          <button class="btn secondary" id="practiceNext">Next</button>
+          <button class="btn secondary" id="practiceShuffle">Shuffle</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="vocab-data.js"></script>
+  <script>
+    const DATA = window.VOCAB_DATA;
+    const weekTopics = [...new Map(DATA.map(x => [x.week, x.topic])).entries()].sort((a,b)=>a[0]-b[0]);
+    const state = { index: 0, revealed: false, items: [...DATA] };
+    const $ = (id) => document.getElementById(id);
+    function escapeHTML(s) { return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+    function populateWeekSelect(select) {
+      select.innerHTML = '<option value="all">All weeks</option>' + weekTopics.map(([num, topic]) => `<option value="${num}">Week ${num} — ${escapeHTML(topic)}</option>`).join('');
+    }
+    function filterItems() {
+      const weekVal = $('practiceWeek').value;
+      const q = $('practiceSearch').value.trim().toLowerCase();
+      const list = DATA.filter(item => {
+        const weekOK = weekVal === 'all' || item.week === Number(weekVal);
+        const text = `${item.term} ${item.vi || ''} ${item.definition} ${item.example} ${item.topic}`.toLowerCase();
+        return weekOK && (!q || text.includes(q));
+      });
+      state.items = list;
+      state.index = Math.min(state.index, Math.max(0, list.length - 1));
+      state.revealed = false;
+      renderPractice();
+    }
+    function progressPct() { return state.items.length ? ((state.index + 1) / state.items.length) * 100 : 0; }
+    function blankSentenceHTML(item, revealed) {
+      const parts = item.blanked.split('[[BLANK]]');
+      const blankClass = revealed ? 'blank revealed' : 'blank';
+      const answer = revealed ? escapeHTML(item.blank_answer) : '________';
+      return `${escapeHTML(parts[0] || '')}<span class="${blankClass}" id="activeBlank" title="Click to reveal answer">${answer}</span>${escapeHTML(parts.slice(1).join(''))}`;
+    }
+    function renderPractice() {
+      const items = state.items;
+      $('practiceCount').textContent = items.length ? `${state.index + 1} / ${items.length} sentences` : '0 sentences';
+      $('practiceBar').style.width = progressPct() + '%';
+      if (!items.length) { $('practicePanel').innerHTML = '<div class="empty">No practice sentences match this filter.</div>'; return; }
+      const item = items[state.index];
+      $('practicePanel').innerHTML = `<div><div class="week-tag">Week ${item.week} — ${escapeHTML(item.topic)}</div><p class="sentence">${blankSentenceHTML(item, state.revealed)}</p><p class="practice-definition ${state.revealed ? 'visible' : ''}"><strong>${escapeHTML(item.term)}:</strong> ${escapeHTML(item.definition)}</p><p class="hint">Guess the term, then click the blank or press <span class="kbd">Space</span> to reveal the answer.</p></div>`;
+      const blank = $('activeBlank');
+      if (blank) blank.addEventListener('click', () => { state.revealed = !state.revealed; renderPractice(); });
+      $('practiceReveal').textContent = state.revealed ? 'Hide Answer' : 'Reveal Answer';
+    }
+    function next() { if (!state.items.length) return; state.index = (state.index + 1) % state.items.length; state.revealed = false; renderPractice(); }
+    function prev() { if (!state.items.length) return; state.index = (state.index - 1 + state.items.length) % state.items.length; state.revealed = false; renderPractice(); }
+    function shuffle() {
+      if (state.items.length < 2) return;
+      let randomIndex = Math.floor(Math.random() * state.items.length);
+      if (randomIndex === state.index) randomIndex = (randomIndex + 1) % state.items.length;
+      state.index = randomIndex; state.revealed = false; renderPractice();
+    }
+    function toggleReveal() { if (!state.items.length) return; state.revealed = !state.revealed; renderPractice(); }
+    populateWeekSelect($('practiceWeek'));
+    $('practiceWeek').addEventListener('input', filterItems);
+    $('practiceSearch').addEventListener('input', filterItems);
+    $('practiceReveal').addEventListener('click', toggleReveal);
+    $('practiceNext').addEventListener('click', next);
+    $('practicePrev').addEventListener('click', prev);
+    $('practiceShuffle').addEventListener('click', shuffle);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+      if (e.code === 'Space') { e.preventDefault(); toggleReveal(); }
+    });
+    renderPractice();
+  </script>
+</body>
+</html>

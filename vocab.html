@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marketing English Flip Cards</title>
+  <meta name="description" content="Review marketing vocabulary with Vietnamese support and simple English definitions." />
+  <meta property="og:title" content="Marketing English Flip Cards" />
+  <meta property="og:description" content="Review marketing vocabulary with Vietnamese support and simple English definitions." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://learnwithla.github.io/marketing-thesis-training/vocab.html" />
+  <meta property="og:image" content="https://learnwithla.github.io/marketing-thesis-training/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Marketing English Flip Cards" />
+  <meta name="twitter:description" content="Review marketing vocabulary with Vietnamese support and simple English definitions." />
+  <meta name="twitter:image" content="https://learnwithla.github.io/marketing-thesis-training/og-image.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="Go to homepage">
+        <div class="logo">La</div>
+        <div>
+          <h1>Flip Cards</h1>
+          <p>Click the card to reveal the meaning.</p>
+        </div>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="index.html">Home</a>
+        <a href="practice.html">Practice Time</a>
+        <a href="casestudy.html">Case Study</a>
+      </nav>
+    </header>
+
+    <main>
+      <h2 class="page-title">Marketing Vocabulary</h2>
+      <p class="page-subtitle">Use the filters to study by week. Click the card, the Reveal button, or press Space to show the Vietnamese translation and definition.</p>
+
+      <div class="toolbar">
+        <div class="filters">
+          <select id="vocabWeek" aria-label="Filter by week"></select>
+          <input id="vocabSearch" type="search" placeholder="Search terms, Vietnamese, or definitions..." aria-label="Search vocabulary" />
+        </div>
+        <span class="pill" id="vocabCount"></span>
+      </div>
+
+      <div class="study-wrap">
+        <div class="progress"><div class="bar" id="vocabBar"></div></div>
+        <div class="card-panel">
+          <button class="flash-card" id="flashCard" aria-label="Click to reveal card"></button>
+        </div>
+        <div class="controls">
+          <button class="btn secondary" id="vocabPrev">Previous</button>
+          <button class="btn" id="vocabFlip">Reveal</button>
+          <button class="btn secondary" id="vocabNext">Next</button>
+          <button class="btn secondary" id="vocabShuffle">Shuffle</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="vocab-data.js"></script>
+  <script>
+    const DATA = window.VOCAB_DATA;
+    const weekTopics = [...new Map(DATA.map(x => [x.week, x.topic])).entries()].sort((a,b)=>a[0]-b[0]);
+    const state = { index: 0, revealed: false, items: [...DATA] };
+    const $ = (id) => document.getElementById(id);
+    function escapeHTML(s) { return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+    function populateWeekSelect(select) {
+      select.innerHTML = '<option value="all">All weeks</option>' + weekTopics.map(([num, topic]) => `<option value="${num}">Week ${num} — ${escapeHTML(topic)}</option>`).join('');
+    }
+    function filterItems() {
+      const weekVal = $('vocabWeek').value;
+      const q = $('vocabSearch').value.trim().toLowerCase();
+      const list = DATA.filter(item => {
+        const weekOK = weekVal === 'all' || item.week === Number(weekVal);
+        const text = `${item.term} ${item.vi || ''} ${item.definition} ${item.example} ${item.topic}`.toLowerCase();
+        return weekOK && (!q || text.includes(q));
+      });
+      state.items = list;
+      state.index = Math.min(state.index, Math.max(0, list.length - 1));
+      state.revealed = false;
+      renderVocab();
+    }
+    function progressPct() { return state.items.length ? ((state.index + 1) / state.items.length) * 100 : 0; }
+    function renderVocab() {
+      const items = state.items;
+      $('vocabCount').textContent = items.length ? `${state.index + 1} / ${items.length} cards` : '0 cards';
+      $('vocabBar').style.width = progressPct() + '%';
+      if (!items.length) { $('flashCard').innerHTML = '<div class="empty">No cards match this filter.</div>'; return; }
+      const item = items[state.index];
+      if (!state.revealed) {
+        $('flashCard').innerHTML = `<div><div class="week-tag">Week ${item.week} — ${escapeHTML(item.topic)}</div><p class="term">${escapeHTML(item.term)}</p><p class="hint">Click the word or press <span class="kbd">Space</span> to reveal the meaning.</p></div>`;
+        $('vocabFlip').textContent = 'Reveal';
+      } else {
+        $('flashCard').innerHTML = `<div><div class="week-tag">Week ${item.week} — ${escapeHTML(item.topic)}</div><p class="flipped-term">${escapeHTML(item.term)}</p><p class="vi-term">${escapeHTML(item.vi || '')}</p><p class="definition">${escapeHTML(item.definition)}</p><p class="example-small">Example: ${escapeHTML(item.example)}</p><p class="hint">Click again to hide the meaning.</p></div>`;
+        $('vocabFlip').textContent = 'Hide';
+      }
+    }
+    function next() { if (!state.items.length) return; state.index = (state.index + 1) % state.items.length; state.revealed = false; renderVocab(); }
+    function prev() { if (!state.items.length) return; state.index = (state.index - 1 + state.items.length) % state.items.length; state.revealed = false; renderVocab(); }
+    function shuffle() {
+      if (state.items.length < 2) return;
+      let randomIndex = Math.floor(Math.random() * state.items.length);
+      if (randomIndex === state.index) randomIndex = (randomIndex + 1) % state.items.length;
+      state.index = randomIndex; state.revealed = false; renderVocab();
+    }
+    function toggleReveal() { if (!state.items.length) return; state.revealed = !state.revealed; renderVocab(); }
+    populateWeekSelect($('vocabWeek'));
+    $('vocabWeek').addEventListener('input', filterItems);
+    $('vocabSearch').addEventListener('input', filterItems);
+    $('flashCard').addEventListener('click', toggleReveal);
+    $('vocabFlip').addEventListener('click', toggleReveal);
+    $('vocabNext').addEventListener('click', next);
+    $('vocabPrev').addEventListener('click', prev);
+    $('vocabShuffle').addEventListener('click', shuffle);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+      if (e.code === 'Space') { e.preventDefault(); toggleReveal(); }
+    });
+    renderVocab();
+  </script>
+</body>
+</html>
