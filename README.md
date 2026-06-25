@@ -1,4 +1,4 @@
-# Learn with La
+# Learn w. LA: Marketing Thesis Training
 
 A small learning space for Marketing English practice.
 
