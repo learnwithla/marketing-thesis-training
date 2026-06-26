@@ -4,6 +4,12 @@ A small learning space for Marketing English practice.
 
 This project was created to help students learn marketing vocabulary, understand key concepts, and practice speaking with more confidence.
 
+## Live site
+
+Open the learning page here:
+
+https://learnwithla.github.io/marketing-thesis-training/
+
 ## What is inside?
 
 This site has two main parts:
@@ -56,12 +62,6 @@ This tool gives them a simple way to review, practice, and speak more naturally 
 6. Repeat the difficult words again.
 
 Small practice every day is better than memorizing everything at once.
-
-## Live site
-
-Open the learning page here:
-
-https://learnwithla.github.io/marketing-thesis-training/
 
 ## Made with care
 
