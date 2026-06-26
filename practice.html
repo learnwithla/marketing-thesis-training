@@ -94,7 +94,10 @@
       $('practiceBar').style.width = progressPct() + '%';
       if (!items.length) { $('practicePanel').innerHTML = '<div class="empty">No practice sentences match this filter.</div>'; return; }
       const item = items[state.index];
-      $('practicePanel').innerHTML = `<div><div class="week-tag">Week ${item.week} — ${escapeHTML(item.topic)}</div><p class="sentence">${blankSentenceHTML(item, state.revealed)}</p><p class="practice-definition ${state.revealed ? 'visible' : ''}"><strong>${escapeHTML(item.term)}:</strong> ${escapeHTML(item.definition)}</p><p class="hint">Guess the term, then click the blank or press <span class="kbd">Space</span> to reveal the answer.</p></div>`;
+      const clueText = state.revealed
+        ? `<strong>${escapeHTML(item.term)}:</strong> ${escapeHTML(item.definition)}`
+        : `<strong>Clue:</strong> ${escapeHTML(item.definition)}`;
+      $('practicePanel').innerHTML = `<div><div class="week-tag">Week ${item.week} — ${escapeHTML(item.topic)}</div><p class="sentence">${blankSentenceHTML(item, state.revealed)}</p><p class="practice-definition visible">${clueText}</p><p class="hint">Guess the term, then click the blank or press <span class="kbd">Space</span> to reveal the answer.</p></div>`;
       const blank = $('activeBlank');
       if (blank) blank.addEventListener('click', () => { state.revealed = !state.revealed; renderPractice(); });
       $('practiceReveal').textContent = state.revealed ? 'Hide Answer' : 'Reveal Answer';
